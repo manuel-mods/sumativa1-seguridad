@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" 
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile - Recipe App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px 0;
+            margin-bottom: 20px;
+        }
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        nav ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+        }
+        nav ul li {
+            margin-left: 20px;
+        }
+        nav ul li a {
+            color: white;
+            text-decoration: none;
+        }
+        nav ul li a:hover {
+            text-decoration: underline;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .profile-card {
+            background-color: white;
+            border-radius: 5px;
+            padding: 30px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .profile-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .profile-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background-color: #4CAF50;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 36px;
+            font-weight: bold;
+            margin-right: 20px;
+        }
+        .profile-info h2 {
+            margin: 0 0 5px 0;
+            color: #333;
+        }
+        .profile-info p {
+            margin: 0;
+            color: #666;
+        }
+        .profile-details {
+            margin-top: 20px;
+        }
+        .profile-details div {
+            margin-bottom: 15px;
+        }
+        .profile-details label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        .profile-details span {
+            color: #666;
+        }
+        .roles-list {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+        .roles-list li {
+            display: inline-block;
+            background-color: #e7f3e8;
+            padding: 5px 10px;
+            border-radius: 15px;
+            margin-right: 5px;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        .back-link {
+            display: inline-block;
+            margin-top: 10px;
+            color: #4CAF50;
+            text-decoration: none;
+        }
+        .back-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <div class="logo">Recipe App</div>
+            <nav>
+                <ul>
+                    <li><a th:href="@{/}">Home</a></li>
+                    <li><a th:href="@{/search}">Search</a></li>
+                    <li sec:authorize="isAuthenticated()"><a th:href="@{/users}">Users</a></li>
+                    <li sec:authorize="isAuthenticated()"><a th:href="@{/me}">My Profile</a></li>
+                    <li sec:authorize="isAuthenticated()">
+                        <form th:action="@{/logout}" method="post" style="display: inline;">
+                            <button type="submit" style="background: none; border: none; color: white; cursor: pointer; text-decoration: none; font-size: 16px;">Logout</button>
+                        </form>
+                    </li>
+                    <li sec:authorize="!isAuthenticated()"><a th:href="@{/login}">Login</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container">
+        <h1>My Profile</h1>
+
+        <div class="profile-card">
+            <div class="profile-header">
+                <div class="profile-avatar" th:text="${#strings.substring(user.username, 0, 1).toUpperCase()}">U</div>
+                <div class="profile-info">
+                    <h2 th:text="${user.username}">Username</h2>
+                    <p th:text="${user.email}">user@example.com</p>
+                </div>
+            </div>
+
+            <div class="profile-details">
+                <div>
+                    <label>User ID:</label>
+                    <span th:text="${user.id}">1</span>
+                </div>
+                <div>
+                    <label>Roles:</label>
+                    <ul class="roles-list">
+                        <li th:each="role : ${user.roles}" th:text="${role}">ROLE_USER</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <a th:href="@{/}" class="back-link">Back to Home</a>
+    </div>
+</body>
+</html>

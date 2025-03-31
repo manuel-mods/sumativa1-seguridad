@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" 
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home - Recipe App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px 0;
+            margin-bottom: 20px;
+        }
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        nav ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+        }
+        nav ul li {
+            margin-left: 20px;
+        }
+        nav ul li a {
+            color: white;
+            text-decoration: none;
+        }
+        nav ul li a:hover {
+            text-decoration: underline;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        .welcome-message {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        .sections {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .section {
+            flex: 1;
+            min-width: 300px;
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .recipe-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        .recipe-card {
+            background-color: white;
+            border-radius: 5px;
+            overflow: hidden;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .recipe-card-image {
+            width: 100%;
+            height: 150px;
+            background-color: #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+        }
+        .recipe-card-content {
+            padding: 15px;
+        }
+        .recipe-card h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .recipe-card p {
+            margin: 0 0 10px;
+            color: #666;
+        }
+        .view-link {
+            display: inline-block;
+            background-color: #4CAF50;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        .view-link:hover {
+            background-color: #45a049;
+        }
+        .banner {
+            background-color: #ffe6cc;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: bold;
+        }
+        .alert {
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 5px;
+            background-color: #d4edda;
+            color: #155724;
+            font-weight: bold;
+        }
+        .search-form {
+            display: flex;
+            margin-bottom: 20px;
+        }
+        .search-form input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-right: none;
+            border-radius: 4px 0 0 4px;
+        }
+        .search-form button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 0 4px 4px 0;
+            cursor: pointer;
+        }
+        .search-form button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <div class="logo">Recipe App</div>
+            <nav>
+                <ul>
+                    <li><a th:href="@{/}">Home</a></li>
+                    <li><a th:href="@{/search}">Search</a></li>
+                    <li sec:authorize="isAuthenticated()"><a th:href="@{/users}">Users</a></li>
+                    <li sec:authorize="isAuthenticated()"><a th:href="@{/me}">My Profile</a></li>
+                    <li sec:authorize="isAuthenticated()">
+                        <form th:action="@{/logout}" method="post" style="display: inline;">
+                            <button type="submit" style="background: none; border: none; color: white; cursor: pointer; text-decoration: none; font-size: 16px;">Logout</button>
+                        </form>
+                    </li>
+                    <li sec:authorize="!isAuthenticated()"><a th:href="@{/login}">Login</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container">
+        <div th:if="${param.logout}" class="alert">
+            You have been logged out successfully.
+        </div>
+        
+        <div class="welcome-message">
+            <h1>Welcome to Recipe App</h1>
+            <p>Find, discover, and save your favorite recipes from around the world!</p>
+            
+            <form th:action="@{/search}" method="get" class="search-form">
+                <input type="text" name="name" placeholder="Search for recipes...">
+                <button type="submit">Search</button>
+            </form>
+        </div>
+
+        <div th:if="${banners != null && banners.length > 0}">
+            <div class="banner" th:each="banner : ${banners}" th:text="${banner}">
+                Banner text
+            </div>
+        </div>
+
+        <div class="sections">
+            <div class="section">
+                <h2>Popular Recipes</h2>
+                <div class="recipe-grid">
+                    <div class="recipe-card" th:each="recipe : ${popularRecipes}">
+                        <div class="recipe-card-image">
+                            [Recipe Image]
+                        </div>
+                        <div class="recipe-card-content">
+                            <h3 th:text="${recipe.name}">Recipe Name</h3>
+                            <p th:text="${recipe.cuisineType + ' • ' + recipe.difficulty}">Cuisine • Difficulty</p>
+                            <a th:href="@{/recipes/{id}(id=${recipe.id})}" class="view-link">View Recipe</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2>Recent Recipes</h2>
+                <div class="recipe-grid">
+                    <div class="recipe-card" th:each="recipe : ${recentRecipes}">
+                        <div class="recipe-card-image">
+                            [Recipe Image]
+                        </div>
+                        <div class="recipe-card-content">
+                            <h3 th:text="${recipe.name}">Recipe Name</h3>
+                            <p th:text="${recipe.cuisineType + ' • ' + recipe.difficulty}">Cuisine • Difficulty</p>
+                            <a th:href="@{/recipes/{id}(id=${recipe.id})}" class="view-link">View Recipe</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

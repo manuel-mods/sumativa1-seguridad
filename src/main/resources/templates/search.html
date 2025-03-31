@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" 
+      xmlns:sec="http://www.thymeleaf.org/thymeleaf-extras-springsecurity6">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Recipes - Recipe App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px 0;
+            margin-bottom: 20px;
+        }
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+        }
+        nav ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+        }
+        nav ul li {
+            margin-left: 20px;
+        }
+        nav ul li a {
+            color: white;
+            text-decoration: none;
+        }
+        nav ul li a:hover {
+            text-decoration: underline;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+        .search-box {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        .search-options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .form-group {
+            flex: 1;
+            min-width: 200px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .search-button {
+            width: 100%;
+            padding: 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 20px;
+        }
+        .search-button:hover {
+            background-color: #45a049;
+        }
+        .results {
+            margin-top: 30px;
+        }
+        .result-count {
+            margin-bottom: 20px;
+            font-weight: bold;
+            color: #666;
+        }
+        .recipe-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        .recipe-card {
+            background-color: white;
+            border-radius: 5px;
+            overflow: hidden;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .recipe-card-image {
+            width: 100%;
+            height: 150px;
+            background-color: #ddd;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+        }
+        .recipe-card-content {
+            padding: 15px;
+        }
+        .recipe-card h3 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        .recipe-card p {
+            margin: 0 0 10px;
+            color: #666;
+        }
+        .view-link {
+            display: inline-block;
+            background-color: #4CAF50;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 4px;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        .view-link:hover {
+            background-color: #45a049;
+        }
+        .no-results {
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            text-align: center;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <div class="logo">Recipe App</div>
+            <nav>
+                <ul>
+                    <li><a th:href="@{/}">Home</a></li>
+                    <li><a th:href="@{/search}">Search</a></li>
+                    <li sec:authorize="isAuthenticated()"><a th:href="@{/users}">Users</a></li>
+                    <li sec:authorize="isAuthenticated()"><a th:href="@{/me}">My Profile</a></li>
+                    <li sec:authorize="isAuthenticated()">
+                        <form th:action="@{/logout}" method="post" style="display: inline;">
+                            <button type="submit" style="background: none; border: none; color: white; cursor: pointer; text-decoration: none; font-size: 16px;">Logout</button>
+                        </form>
+                    </li>
+                    <li sec:authorize="!isAuthenticated()"><a th:href="@{/login}">Login</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container">
+        <h1>Search Recipes</h1>
+
+        <div class="search-box">
+            <form th:action="@{/search}" method="get">
+                <div class="search-options">
+                    <div class="form-group">
+                        <label for="name">Recipe Name</label>
+                        <input type="text" id="name" name="name" th:value="${name}">
+                    </div>
+                    <div class="form-group">
+                        <label for="cuisineType">Cuisine Type</label>
+                        <select id="cuisineType" name="cuisineType">
+                            <option value="">Any Cuisine</option>
+                            <option value="Italian" th:selected="${cuisineType == 'Italian'}">Italian</option>
+                            <option value="Mexican" th:selected="${cuisineType == 'Mexican'}">Mexican</option>
+                            <option value="Indian" th:selected="${cuisineType == 'Indian'}">Indian</option>
+                            <option value="Japanese" th:selected="${cuisineType == 'Japanese'}">Japanese</option>
+                            <option value="Spanish" th:selected="${cuisineType == 'Spanish'}">Spanish</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="ingredient">Ingredient</label>
+                        <input type="text" id="ingredient" name="ingredient" th:value="${ingredient}">
+                    </div>
+                </div>
+                <div class="search-options">
+                    <div class="form-group">
+                        <label for="countryOfOrigin">Country of Origin</label>
+                        <select id="countryOfOrigin" name="countryOfOrigin">
+                            <option value="">Any Country</option>
+                            <option value="Italy" th:selected="${countryOfOrigin == 'Italy'}">Italy</option>
+                            <option value="Mexico" th:selected="${countryOfOrigin == 'Mexico'}">Mexico</option>
+                            <option value="India" th:selected="${countryOfOrigin == 'India'}">India</option>
+                            <option value="Japan" th:selected="${countryOfOrigin == 'Japan'}">Japan</option>
+                            <option value="Spain" th:selected="${countryOfOrigin == 'Spain'}">Spain</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="difficulty">Difficulty</label>
+                        <select id="difficulty" name="difficulty">
+                            <option value="">Any Difficulty</option>
+                            <option value="Easy" th:selected="${difficulty == 'Easy'}">Easy</option>
+                            <option value="Medium" th:selected="${difficulty == 'Medium'}">Medium</option>
+                            <option value="Hard" th:selected="${difficulty == 'Hard'}">Hard</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <!-- Empty space for alignment -->
+                    </div>
+                </div>
+                <button type="submit" class="search-button">Search Recipes</button>
+            </form>
+        </div>
+
+        <div class="results" th:if="${recipes != null}">
+            <div class="result-count" th:text="${recipes.size()} + ' recipes found'">0 recipes found</div>
+            
+            <div class="recipe-grid" th:if="${!recipes.isEmpty()}">
+                <div class="recipe-card" th:each="recipe : ${recipes}">
+                    <div class="recipe-card-image">
+                        [Recipe Image]
+                    </div>
+                    <div class="recipe-card-content">
+                        <h3 th:text="${recipe.name}">Recipe Name</h3>
+                        <p th:text="${recipe.cuisineType + ' • ' + recipe.difficulty}">Cuisine • Difficulty</p>
+                        <p th:text="${'Cook time: ' + recipe.cookTimeMinutes + ' mins'}">Cook time: 30 mins</p>
+                        <a th:href="@{/recipes/{id}(id=${recipe.id})}" class="view-link">View Recipe</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="no-results" th:if="${recipes.isEmpty()}">
+                <p>No recipes found matching your criteria. Try adjusting your search filters.</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
