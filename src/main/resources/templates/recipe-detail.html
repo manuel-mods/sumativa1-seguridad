@@ -226,7 +226,7 @@
 
         <div class="recipe-section">
             <h2>Instructions</h2>
-            <div class="instructions" th:utext="${#strings.replace(recipe.instructions, '&#10;', '<br/>')}">
+            <div class="instructions" style="white-space: pre-line;" th:text="${recipe.instructions}">
                 Instructions will be here...
             </div>
         </div>
