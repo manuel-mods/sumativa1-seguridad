@@ -5,9 +5,12 @@ import static org.mockito.Mockito.*;
 
 import com.example.duoc.model.User;
 import com.example.duoc.repository.UserRepository;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,15 +28,24 @@ public class CustomUserDetailsServiceTests {
   @InjectMocks private CustomUserDetailsService customUserDetailsService;
 
   private User testUser;
+  private final ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
+  private final PrintStream originalSystemOut = System.out;
 
   @BeforeEach
   void setUp() {
+    System.setOut(new PrintStream(outputStreamCaptor));
+
     testUser = new User();
     testUser.setId(1L);
     testUser.setUsername("testuser");
     testUser.setEmail("test@example.com");
     testUser.setPassword("encodedPassword");
     testUser.setRoles(Set.of("ROLE_USER"));
+  }
+
+  @AfterEach
+  void tearDown() {
+    System.setOut(originalSystemOut);
   }
 
   @Test
@@ -55,6 +67,8 @@ public class CustomUserDetailsServiceTests {
     assertEquals(1, authorities.size());
 
     verify(userRepository).findByUsername("testuser");
+
+    assertTrue(outputStreamCaptor.toString().contains("Authentication attempt for user: testuser"));
   }
 
   @Test
@@ -81,7 +95,7 @@ public class CustomUserDetailsServiceTests {
     userWithRoleWithoutPrefix.setUsername("roleuser");
     userWithRoleWithoutPrefix.setEmail("role@example.com");
     userWithRoleWithoutPrefix.setPassword("password");
-    userWithRoleWithoutPrefix.setRoles(Set.of("USER", "ADMIN")); // Roles without ROLE_ prefix
+    userWithRoleWithoutPrefix.setRoles(Set.of("USER", "ADMIN"));
 
     when(userRepository.findByUsername("roleuser"))
         .thenReturn(Optional.of(userWithRoleWithoutPrefix));

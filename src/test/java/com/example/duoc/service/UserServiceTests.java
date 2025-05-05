@@ -5,13 +5,18 @@ import static org.mockito.Mockito.*;
 
 import com.example.duoc.model.User;
 import com.example.duoc.repository.UserRepository;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -34,12 +39,22 @@ public class UserServiceTests {
 
   @InjectMocks private UserService userService;
 
+  @Captor private ArgumentCaptor<User> userCaptor;
+
+  private final ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
+  private final PrintStream originalSystemOut = System.out;
+  private final ByteArrayOutputStream errorStreamCaptor = new ByteArrayOutputStream();
+  private final PrintStream originalSystemErr = System.err;
+
   private User testUser;
   private User adminUser;
   private List<User> userList;
 
   @BeforeEach
   void setUp() {
+    System.setOut(new PrintStream(outputStreamCaptor));
+    System.setErr(new PrintStream(errorStreamCaptor));
+
     testUser = new User();
     testUser.setId(1L);
     testUser.setUsername("testuser");
@@ -55,6 +70,12 @@ public class UserServiceTests {
     adminUser.setRoles(Set.of("ROLE_USER", "ROLE_ADMIN"));
 
     userList = Arrays.asList(testUser, adminUser);
+  }
+
+  @AfterEach
+  void tearDown() {
+    System.setOut(originalSystemOut);
+    System.setErr(originalSystemErr);
   }
 
   @Test
@@ -123,6 +144,17 @@ public class UserServiceTests {
   }
 
   @Test
+  void findUserByEmail_WithNonExistingEmail_ReturnsEmptyOptional() {
+    String nonExistingEmail = "nonexisting@example.com";
+    when(userRepository.findByEmail(nonExistingEmail)).thenReturn(Optional.empty());
+
+    Optional<User> result = userService.findUserByEmail(nonExistingEmail);
+
+    assertFalse(result.isPresent());
+    verify(userRepository).findByEmail(nonExistingEmail);
+  }
+
+  @Test
   void getCurrentUser_WhenAuthenticated_ReturnsCurrentUser() {
     SecurityContextHolder.setContext(securityContext);
     when(securityContext.getAuthentication()).thenReturn(authentication);
@@ -134,6 +166,8 @@ public class UserServiceTests {
     assertNotNull(result);
     assertEquals("testuser", result.getUsername());
     verify(userRepository).findByUsername("testuser");
+
+    assertTrue(outputStreamCaptor.toString().contains("Getting current user: testuser"));
 
     SecurityContextHolder.clearContext();
   }
@@ -150,6 +184,26 @@ public class UserServiceTests {
 
     assertTrue(exception.getMessage().contains("User not found with username: nonexistinguser"));
     verify(userRepository).findByUsername("nonexistinguser");
+
+    // Verify log messages
+    assertTrue(outputStreamCaptor.toString().contains("Getting current user: nonexistinguser"));
+
+    SecurityContextHolder.clearContext();
+  }
+
+  @Test
+  void getCurrentUser_WhenExceptionOccurs_LogsErrorAndRethrows() {
+    SecurityContextHolder.setContext(securityContext);
+
+    RuntimeException authException = new RuntimeException("Authentication error");
+    when(securityContext.getAuthentication()).thenThrow(authException);
+
+    Exception exception = assertThrows(RuntimeException.class, () -> userService.getCurrentUser());
+
+    assertEquals("Authentication error", exception.getMessage());
+
+    assertTrue(
+        errorStreamCaptor.toString().contains("Error getting current user: Authentication error"));
 
     SecurityContextHolder.clearContext();
   }
@@ -251,5 +305,47 @@ public class UserServiceTests {
     userService.deleteUser(1L);
 
     verify(userRepository).deleteById(1L);
+  }
+
+  @Test
+  void init_WithNoUsers_CreatesSampleUsers() {
+    when(userRepository.count()).thenReturn(0L);
+    when(passwordEncoder.encode(anyString())).thenReturn("encodedPassword");
+
+    userService.init();
+
+    verify(userRepository, times(3)).save(userCaptor.capture());
+
+    List<User> capturedUsers = userCaptor.getAllValues();
+
+    assertEquals(3, capturedUsers.size());
+
+    assertTrue(outputStreamCaptor.toString().contains("Initializing users database..."));
+    assertTrue(outputStreamCaptor.toString().contains("Sample users initialized successfully!"));
+
+    assertTrue(capturedUsers.stream().anyMatch(u -> "user1".equals(u.getUsername())));
+    assertTrue(capturedUsers.stream().anyMatch(u -> "user2".equals(u.getUsername())));
+    assertTrue(capturedUsers.stream().anyMatch(u -> "admin".equals(u.getUsername())));
+  }
+
+  @Test
+  void init_WithExistingUsers_DoesNotCreateSampleUsers() {
+    when(userRepository.count()).thenReturn(10L);
+
+    userService.init();
+
+    assertTrue(
+        outputStreamCaptor.toString().contains("Users already exist, skipping initialization"));
+
+    verify(userRepository, never()).save(any(User.class));
+  }
+
+  @Test
+  void init_WithExceptionDuringCreation_MethodCompletesWithoutErrors() {
+    when(userRepository.count()).thenReturn(0L);
+
+    when(passwordEncoder.encode(anyString())).thenThrow(new RuntimeException("Encoding error"));
+
+    userService.init();
   }
 }

@@ -1,6 +1,7 @@
 package com.example.duoc.service;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.*;
 
 import com.example.duoc.model.Recipe;
@@ -11,6 +12,8 @@ import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -21,6 +24,8 @@ public class RecipeServiceTests {
   @Mock private RecipeRepository recipeRepository;
 
   @InjectMocks private RecipeService recipeService;
+
+  @Captor private ArgumentCaptor<List<Recipe>> recipeListCaptor;
 
   private Recipe testRecipe1;
   private Recipe testRecipe2;
@@ -201,5 +206,33 @@ public class RecipeServiceTests {
 
     assertTrue(result.isEmpty());
     verify(recipeRepository).findAll();
+  }
+
+  @Test
+  void init_WithNoRecipes_CreatesSampleRecipes() {
+    when(recipeRepository.count()).thenReturn(0L);
+
+    recipeService.init();
+
+    verify(recipeRepository).saveAll(recipeListCaptor.capture());
+
+    List<Recipe> capturedRecipes = recipeListCaptor.getValue();
+
+    assertEquals(5, capturedRecipes.size());
+
+    assertTrue(capturedRecipes.stream().anyMatch(r -> "Spaghetti Carbonara".equals(r.getName())));
+    assertTrue(capturedRecipes.stream().anyMatch(r -> "Chicken Tacos".equals(r.getName())));
+    assertTrue(capturedRecipes.stream().anyMatch(r -> "Vegetable Curry".equals(r.getName())));
+    assertTrue(capturedRecipes.stream().anyMatch(r -> "California Roll".equals(r.getName())));
+    assertTrue(capturedRecipes.stream().anyMatch(r -> "Seafood Paella".equals(r.getName())));
+  }
+
+  @Test
+  void init_WithExistingRecipes_DoesNotCreateSampleRecipes() {
+    when(recipeRepository.count()).thenReturn(10L);
+
+    recipeService.init();
+
+    verify(recipeRepository, never()).saveAll(anyList());
   }
 }

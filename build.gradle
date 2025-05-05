@@ -37,7 +37,7 @@ dependencies {
 
 
 jacoco {
-    reportsDirectory = layout.buildDirectory.dir("coverage")
+    reportsDirectory = layout.buildDirectory.dir("reports/coverage")
 }
 
 checkstyle {
@@ -66,6 +66,24 @@ tasks.test {
 }
 tasks.jacocoTestReport {
     dependsOn(tasks.test)
+    reports {
+        xml.required = true
+        html.required = true
+    }
+}
+
+jacocoTestCoverageVerification {
+    violationRules {
+        rule {
+            element = 'PACKAGE'
+            includes = ['com.example.duoc.service']
+            limit {
+                counter = 'LINE'
+                value = 'COVEREDRATIO'
+                minimum = 0.9
+            }
+        }
+    }
 }
 
 tasks.named('check') {

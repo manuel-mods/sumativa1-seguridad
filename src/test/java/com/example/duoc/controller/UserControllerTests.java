@@ -36,7 +36,6 @@ public class UserControllerTests {
 
   @BeforeEach
   void setUp() {
-    // Regular user
     testUser = new User();
     testUser.setId(1L);
     testUser.setUsername("testuser");
@@ -44,7 +43,6 @@ public class UserControllerTests {
     testUser.setPassword("password123");
     testUser.setRoles(Set.of("ROLE_USER"));
 
-    // Admin user
     adminUser = new User();
     adminUser.setId(2L);
     adminUser.setUsername("admin");
@@ -54,7 +52,6 @@ public class UserControllerTests {
 
     testUsers = Arrays.asList(testUser, adminUser);
 
-    // Define mock behavior
     when(userService.findAllUsers()).thenReturn(testUsers);
     when(userService.getCurrentUser()).thenReturn(testUser);
   }
